@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor Montaj Ar-Razzi Denim 5 Minit - FINAL</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+.denim-bg{background: url('denim.jpg'); background-size:cover; background-position:center}
+@keyframes kenIn{from{transform:scale(1)}to{transform:scale(1.25)}}
+@keyframes kenOut{from{transform:scale(1.25)}to{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translate(0,0)}25%{transform:translate(-1px,1px)}50%{transform:translate(1px,-1px)}}
+</style>
+</head>
+<body class="bg-[#0a1220] text-white p-3 font-sans">
+<div class="max-w-6xl mx-auto">
+<h1 class="text-center text-3xl font-black">MONTAJ AR-RAZZI <span class="text-blue-300">DENIM 5 MINIT</span></h1>
+<p class="text-center text-xs text-white/50 mt-1">Segmen1: Denim Frame + Iron Man Reactor | Segmen2: CapCut Memori | Segmen3: 1970s BTS Super 8mm</p>
+
+<!-- UPLOADS -->
+<div class="grid md:grid-cols-3 gap-3 mt-5">
+<div class="bg-white/10 p-3 rounded-xl border border-blue-400/30"><b class="text-blue-300 text-sm">Segmen 1 (0:00-1:00) Intro Staf</b><div class="text-[10px] text-white/50">Zoom Slow, Camera Shake, Arc Reactor, Blue Blast, Typewriter Glow</div><input type="file" id="u1" multiple accept="image/*,video/*" class="mt-2 w-full text-xs bg-black/40 p-2 rounded"><div id="c1" class="text-xs opacity-60">0 fail</div></div>
+<div class="bg-white/10 p-3 rounded-xl border border-blue-200/30"><b class="text-blue-200 text-sm">Segmen 2 (1:00-4:00) Memori 2026</b><div class="text-[10px] text-white/50">Cloud Wipe, Blur, Spin, Lace Fade, Polaroid, Ken Burns UTAMA, Page Curl, Bokeh+Denim Dust | Filter: Memories, Soft Blue, Vintage Denim, Bright White</div><input type="file" id="u2" multiple accept="image/*,video/*" class="mt-2 w-full text-xs bg-black/40 p-2 rounded"><div id="c2" class="text-xs opacity-60">0 fail</div></div>
+<div class="bg-white/10 p-3 rounded-xl border border-yellow-200/40"><b class="text-yellow-200 text-sm">Segmen 3 (4:00-5:00) Random BTS 1970s</b><div class="text-[10px] text-white/50">1970s Vintage, Super 8mm, Sepia Warm, VHS, Dust, Sprocket, REC 1976, Scratch, Light Leak, Shaky, Velocity 0.5s, Whip, Grid Split, Confetti</div><input type="file" id="u3" multiple accept="image/*,video/*" class="mt-2 w-full text-xs bg-black/40 p-2 rounded"><div id="c3" class="text-xs opacity-60">0 fail</div></div>
+</div>
+
+<!-- PREVIEW -->
+<div id="stage" class="relative mt-4 aspect-video bg-black rounded-2xl overflow-hidden border-2 border-white/10">
+<!-- SEG1 DENIM FRAME -->
+<div id="denimFrame" class="absolute inset-0 denim-bg flex items-center justify-center z-10"><div class="absolute inset-0 bg-blue-900/10"></div><div class="relative w-[70%] aspect-video bg-black/80 rounded-xl overflow-hidden border-2 border-white shadow-[0_0_30px_rgba(255,255,255,0.3)]"><img id="pImg" class="w-full h-full object-cover hidden"><video id="pVid" class="w-full h-full object-cover hidden" muted loop></video><div id="arc" class="absolute inset-0 flex items-center justify-center"><div class="w-20 h-20 rounded-full border-4 border-cyan-300 shadow-[0_0_30px_cyan] animate-pulse"></div></div><div id="pText" class="absolute bottom-2 w-full text-center text-sm font-bold bg-black/50">Majlis Apresiasi Staf AR-Razzi 2026</div></div></div>
+<!-- FULLSCREEN FOR SEG2 & 3 -->
+<div id="fullL" class="absolute inset-0 hidden z-20"><img id="fImg" class="w-full h-full object-cover"><video id="fVid" class="w-full h-full object-cover hidden" muted loop></video><div id="bokeh" class="absolute inset-0 pointer-events-none"></div><div id="scratch" class="absolute inset-0 pointer-events-none opacity-0"></div><div id="rec" class="absolute top-3 left-3 bg-yellow-400 text-black text-[10px] px-2 py-0.5 font-black rounded hidden">REC 1976 • AR-RAZZI</div><div id="sprocketL" class="absolute left-0 top-0 bottom-0 w-4 bg-black hidden"></div><div id="sprocketR" class="absolute right-0 top-0 bottom-0 w-4 bg-black hidden"></div></div>
+</div>
+
+<!-- CONTROLS -->
+<div class="mt-3 flex gap-2 items-center bg-white/5 p-3 rounded-xl"><button id="play" class="bg-blue-500 hover:bg-blue-600 px-6 py-2 rounded-full font-bold text-sm">▶ PLAY 5 MINIT</button><button id="exp" class="bg-white text-black px-6 py-2 rounded-full font-bold text-sm">⬇ EXPORT HD MP4</button><span id="tm" class="ml-auto font-mono text-sm">00:00 / 05:00</span></div>
+<div class="h-2 bg-black/60 rounded-full mt-2 overflow-hidden"><div id="prog" class="h-full bg-white transition-all" style="width:0%"></div></div>
+<div class="h-3 flex mt-1 rounded-full overflow-hidden"><div class="bg-[#1e3a8a] flex-1"></div><div class="bg-[#60a5fa] flex-[3]"></div><div class="bg-[#fef08a] flex-1"></div></div>
+<div class="text-[10px] text-white/40 flex justify-between mt-1"><span>0:00 Intro Denim</span><span>1:00 Memori CapCut</span><span>4:00 BTS 1970s</span><span>5:00 End</span></div>
+</div>
+
+<script>
+let f1=[],f2=[],f3=[],playing=false,iv;
+function bind(id,arr,cid){document.getElementById(id).addEventListener('change',e=>{arr.length=0;for(let f of e.target.files)arr.push({file:f,url:URL.createObjectURL(f),type:f.type});document.getElementById(cid).textContent=arr.length+' fail';if(!playing&&arr[0])showPreview(arr[0])})}
+bind('u1',f1,'c1');bind('u2',f2,'c2');bind('u3',f3,'c3');
+function showPreview(it){let i=document.getElementById('pImg'),v=document.getElementById('pVid');if(it.type.startsWith('image')){i.src=it.url;i.classList.remove('hidden');v.classList.add('hidden')}else{v.src=it.url;v.classList.remove('hidden');i.classList.add('hidden');v.play()}}
+function showFull(it){let i=document.getElementById('fImg'),v=document.getElementById('fVid');if(it.type.startsWith('image')){i.src=it.url;i.classList.remove('hidden');v.classList.add('hidden')}else{v.src=it.url;v.classList.remove('hidden');i.classList.add('hidden');v.play()}}
+document.getElementById('play').addEventListener('click',()=>{if(playing)return;playing=true;let st=Date.now(),total=300;document.getElementById('play').textContent='⏸ PLAYING...';iv=setInterval(()=>{let el=(Date.now()-st)/1000;if(el>=total){clearInterval(iv);playing=false;document.getElementById('play').textContent='▶ PLAY 5 MINIT';return}document.getElementById('prog').style.width=(el/total*100)+'%';let m=Math.floor(el/60).toString().padStart(2,'0'),s=Math.floor(el%60).toString().padStart(2,'0');document.getElementById('tm').textContent=m+':'+s+' / 05:00';
+if(el<60){ // SEG1 - DENIM FRAME ONLY
+document.getElementById('denimFrame').classList.remove('hidden');document.getElementById('fullL').classList.add('hidden');
+if(f1.length){let idx=Math.floor(el/5)%f1.length;showPreview(f1[idx]);document.getElementById('pImg').style.animation='kenIn 5s ease-in-out infinite alternate'}
+}else if(el<240){ // SEG2 - MEMORI CAPCUT FULLSCREEN
+document.getElementById('denimFrame').classList.add('hidden');document.getElementById('fullL').classList.remove('hidden');document.getElementById('rec').classList.add('hidden');document.getElementById('sprocketL').classList.add('hidden');document.getElementById('sprocketR').classList.add('hidden');document.getElementById('scratch').style.opacity='0';
+let filters=['brightness(1.1) contrast(1.1) saturate(1.2)','sepia(0.1) brightness(1.05)','contrast(1.1) saturate(0.9) hue-rotate(-5deg)','brightness(1.15) saturate(1.25)'];document.getElementById('fullL').style.filter=filters[Math.floor(el/15)%4];
+document.getElementById('bokeh').innerHTML='<div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 40%, rgba(100,180,255,0.35) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(255,255,255,0.25) 0%, transparent 40%)"></div>';
+if(f2.length){let idx=Math.floor((el-60)/6)%f2.length;showFull(f2[idx]);let img=document.getElementById('fImg');if(el%6<0.3){gsap.fromTo(img,{scale:0.92,opacity:0.5,filter:'blur(8px)'},{scale:1,opacity:1,filter:'blur(0px)',duration:0.9,ease:'power2.out'})}img.style.animation=(idx%2==0?'kenIn':'kenOut')+' 6s ease-in-out';img.style.border='6px solid white';img.style.boxShadow='0 4px 20px rgba(0,0,0,0.3)';}
+}else{ // SEG3 - 1970s BTS
+document.getElementById('denimFrame').classList.add('hidden');document.getElementById('fullL').classList.remove('hidden');document.getElementById('rec').classList.remove('hidden');document.getElementById('sprocketL').classList.remove('hidden');document.getElementById('sprocketR').classList.remove('hidden');
+document.getElementById('fullL').style.filter='sepia(0.65) contrast(1.35) brightness(0.88) saturate(0.6) blur(0.4px)';
+document.getElementById('scratch').style.opacity='0.4';document.getElementById('scratch').innerHTML='<div style="width:100%;height:100%;background:repeating-linear-gradient(90deg, transparent 0 2px, rgba(255,255,255,0.08) 3px), repeating-linear-gradient(0deg, transparent, rgba(255,200,0,0.03) 1px);animation:shake 0.12s infinite"></div>';
+document.getElementById('fullL').style.animation='shake 0.15s infinite';
+if(f3.length){let idx=Math.floor((el-240)/0.7)%f3.length;showFull(f3[idx]);gsap.fromTo(document.getElementById('fImg'),{x:Math.random()*24-12,y:Math.random()*24-12,scale:1.08},{x:0,y:0,scale:1,duration:0.35})}else if(f2.length){let idx=Math.floor((el-240)/0.7)%f2.length;showFull(f2[idx])}
+}},100)});
+document.getElementById('exp').addEventListener('click',()=>{alert('Untuk EXPORT HD MP4 sebenar: Play video ini + guna OBS Studio screen record 1080p. File ini sedia GitHub Pages. Jika nak versi MediaRecorder auto, beritahu saya, saya tambah.')});
+</script>
+</body>
+</html>
