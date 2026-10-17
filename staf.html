@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AR-RAZZI Polaroid Denim Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500;1,700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f1ea;--card:#fff;--ink:#1d2430;--mut:#6b7280;--line:#ddd8cc;--ac:#2f5d8c;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161d;--card:#1b212b;--ink:#e8ecf2;--mut:#98a2b3;--line:#2c3441;--ac:#6ea3d8}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,sans-serif;padding:16px;max-width:1100px;margin-inline:auto}
+h1{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:26px;margin:4px 0 12px}
+canvas{width:100%;max-width:100%;border-radius:10px;background:#eee;display:block;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;align-items:center}
+button,.btn{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;display:inline-block}
+button.alt,.btn.alt{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+button:disabled{opacity:.5}
+.info{font-size:13px;color:var(--mut)}
+.prog{height:8px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0;display:none}
+.prog i{display:block;height:100%;width:0;background:var(--ac)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.slot{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px}
+.slot.on{outline:2px solid var(--ac)}
+.th{aspect-ratio:4/3;background:var(--line);border-radius:6px;overflow:hidden;position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:12px}
+.th img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.th b{position:absolute;left:4px;top:4px;background:rgba(0,0,0,.6);color:#fff;border-radius:4px;padding:1px 6px;font-size:11px;z-index:1}
+.slot input[type=text]{width:100%;margin-top:6px;padding:7px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font-size:13px}
+.slot label.c{display:block;margin-top:6px;font-size:12px;color:var(--ac);text-align:center;cursor:pointer}
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+<h1>AR-RAZZI Polaroid Denim Editor</h1>
+<canvas id="cv" width="1920" height="1080"></canvas>
+<div class="prog" id="pg"><i id="pb"></i></div>
+<div class="bar">
+  <button id="play">▶ Main</button>
+  <label class="btn alt">Pilih banyak gambar<input type="file" id="bulk" accept="image/*" multiple></label>
+  <button id="save">💾 Save Video HD</button>
+  <button id="again" class="alt" style="display:none">Simpan semula</button>
+  <span class="info" id="st">26 gambar × 2 saat = 52 saat · 1920×1080 · tanpa bunyi</span>
+</div>
+<div class="bar"><span class="info">Tajuk:</span>
+  <input id="t1" type="text" value="Majlis Apresiasi Staf" style="flex:1;min-width:160px;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)">
+  <input id="t2" type="text" value="AR-RAZZI 2026" style="flex:1;min-width:140px;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)">
+</div>
+<div class="grid" id="grid"></div>
+
+<script>
+const N=26,DUR=2,W=1920,H=1080,TOTAL=N*DUR;
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const slots=Array.from({length:N},()=>({img:null,name:''}));
+let cur=0,playing=false,t0=0,recording=false;
+const SERIF="'Cormorant Garamond',Georgia,serif";
+
+// ---------- tekstur latar (sekali sahaja) ----------
+function mk(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c}
+function rnd(s){let x=Math.sin(s)*10000;return x-Math.floor(x)}
+const fab=mk(W,H);(function(){
+  const g=fab.getContext('2d');
+  const gr=g.createLinearGradient(0,0,W,H);gr.addColorStop(0,'#f6f3ee');gr.addColorStop(.5,'#fbf9f5');gr.addColorStop(1,'#eeebe5');
+  g.fillStyle=gr;g.fillRect(0,0,W,H);
+  for(let i=0;i<9000;i++){g.fillStyle='rgba(120,110,95,'+(rnd(i)*.05)+')';g.fillRect(rnd(i+1)*W,rnd(i+2)*H,rnd(i+3)*26+4,1.4)}
+  for(let i=0;i<14;i++){const x=rnd(i*7)*W;const l=g.createLinearGradient(x-90,0,x+90,0);l.addColorStop(0,'rgba(0,0,0,0)');l.addColorStop(.5,'rgba(120,110,95,.10)');l.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=l;g.fillRect(x-90,0,180,H)}
+  g.fillStyle='rgba(255,255,255,.9)';g.beginPath();g.arc(70,70,34,0,7);g.fill();
+  g.fillStyle='rgba(0,0,0,.08)';g.beginPath();g.arc(70,70,34,0,7);g.fill();
+  g.fillStyle='#fbfaf7';g.beginPath();g.arc(70,68,31,0,7);g.fill();
+  g.fillStyle='rgba(0,0,0,.18)';[[-8,-8],[8,-8],[-8,8],[8,8]].forEach(p=>{g.beginPath();g.arc(70+p[0]*.0+p[0]*.9/1,68+p[1]*.9,3,0,7);g.fill()});
+})();
+const PW=640,PH=780;
+function pocketPath(g){g.beginPath();g.moveTo(0,0);g.lineTo(PW,0);g.lineTo(PW,PH*.74);g.lineTo(PW/2,PH);g.lineTo(0,PH*.74);g.closePath()}
+const den=mk(PW,PH);(function(){
+  const g=den.getContext('2d');
+  const gr=g.createLinearGradient(0,0,PW,PH);gr.addColorStop(0,'#3d6ea5');gr.addColorStop(.5,'#2f5f95');gr.addColorStop(1,'#4a7db3');
+  g.fillStyle=gr;g.fillRect(0,0,PW,PH);
+  for(let i=-PH;i<PW;i+=3){g.strokeStyle='rgba(255,255,255,'+(0.04+rnd(i)*.08)+')';g.lineWidth=1.4;g.beginPath();g.moveTo(i,0);g.lineTo(i+PH,PH);g.stroke()}
+  for(let i=0;i<5000;i++){g.fillStyle=rnd(i)>.5?'rgba(255,255,255,.07)':'rgba(10,30,70,.10)';g.fillRect(rnd(i+9)*PW,rnd(i+5)*PH,2,2)}
+})();
+
+function cover(g,img,x,y,w,h){const r=Math.max(w/img.width,h/img.height),iw=w/r,ih=h/r;g.drawImage(img,(img.width-iw)/2,(img.height-ih)/2,iw,ih,x,y,w,h)}
+function ease(p){return 1-Math.pow(1-p,3)}
+
+function draw(g,t){
+  const i=Math.min(N-1,Math.floor(t/DUR)),lt=t-i*DUR,s=slots[i];
+  g.clearRect(0,0,W,H);g.drawImage(fab,0,0);
+  const p=ease(Math.min(1,lt/.6)),fo=lt>DUR-.2?(DUR-lt)/.2:1;
+  // poket denim
+  g.save();g.translate(330,150);g.rotate(.05);
+  g.save();g.shadowColor='rgba(0,0,0,.35)';g.shadowBlur=40;g.shadowOffsetY=18;pocketPath(g);g.fillStyle='#2f5f95';g.fill();g.restore();
+  g.save();pocketPath(g);g.clip();g.drawImage(den,0,0);
+  const hm=g.createLinearGradient(0,0,0,70);hm.addColorStop(0,'rgba(10,30,70,.45)');hm.addColorStop(1,'rgba(10,30,70,0)');g.fillStyle=hm;g.fillRect(0,0,PW,70);
+  g.restore();
+  g.strokeStyle='#d9a45a';g.lineWidth=2.5;g.setLineDash([9,7]);
+  g.save();g.translate(14,14);g.scale((PW-28)/PW,(PH-28)/PH);pocketPath(g);g.restore();
+  g.stroke();
+  g.beginPath();g.moveTo(10,62);g.lineTo(PW-10,62);g.stroke();g.setLineDash([]);
+  // polaroid
+  g.save();g.translate(PW/2,PH*.46+(1-p)*-220);g.rotate(-.14+(1-p)*.12);g.globalAlpha=Math.max(0,p*fo);
+  const pw=420,ph=560;
+  g.shadowColor='rgba(0,0,0,.4)';g.shadowBlur=26;g.shadowOffsetY=10;g.fillStyle='#fbfbf8';g.fillRect(-pw/2,-ph/2,pw,ph);g.shadowColor='transparent';
+  const m=16,ix=-pw/2+m,iy=-ph/2+m,iw=pw-2*m,ih=ph-2*m-14;
+  if(s.img)cover(g,s.img,ix,iy,iw,ih);else{g.fillStyle='#8c8c8c';g.fillRect(ix,iy,iw,ih);g.fillStyle='#fff';g.font='600 40px system-ui';g.textAlign='center';g.fillText('Gambar '+(i+1),0,0)}
+  g.restore();g.restore();
+  // label kulit
+  g.save();g.translate(330+80,150+PH*.78+30);g.rotate(.05);
+  g.shadowColor='rgba(0,0,0,.35)';g.shadowBlur=14;g.shadowOffsetY=6;
+  const lg=g.createLinearGradient(0,0,0,80);lg.addColorStop(0,'#a9714a');lg.addColorStop(1,'#7c4a2c');g.fillStyle=lg;g.fillRect(-190,-40,380,80);g.shadowColor='transparent';
+  g.strokeStyle='#d8a77a';g.lineWidth=2;g.setLineDash([5,5]);g.strokeRect(-180,-31,360,62);g.setLineDash([]);
+  g.fillStyle='#e9c77f';g.font='600 40px '+SERIF;g.textAlign='center';g.textBaseline='middle';try{g.letterSpacing='4px'}catch(e){}g.fillText('AR-RAZZI',0,2);g.restore();
+  // teks kanan
+  g.save();g.globalAlpha=Math.max(0,Math.min(1,lt/.5))*fo;g.fillStyle='#1f1f1f';g.textAlign='left';g.textBaseline='alphabetic';
+  try{g.letterSpacing='3px'}catch(e){}
+  g.font='italic 500 58px '+SERIF;g.fillText(document.getElementById('t1').value,1180,480);
+  try{g.letterSpacing='7px'}catch(e){}
+  g.font='500 62px '+SERIF;g.fillText(document.getElementById('t2').value,1215,556);
+  try{g.letterSpacing='2px'}catch(e){}
+  if(s.name){g.fillStyle='#2f5f95';g.fillRect(1215,596,90,3);g.fillStyle='#1f1f1f';g.font='italic 700 76px '+SERIF;g.fillText(s.name,1215,688)}
+  try{g.letterSpacing='0px'}catch(e){}
+  g.restore();
+}
+
+// ---------- UI ----------
+const grid=document.getElementById('grid');
+slots.forEach((s,i)=>{
+  const d=document.createElement('div');d.className='slot';
+  d.innerHTML=`<div class="th"><b>${i+1}</b><span>Tukar gambar</span></div><input type="file" accept="image/*" id="f${i}"><input type="text" placeholder="Nama (gambar ${i+1})" maxlength="40">`;
+  const th=d.querySelector('.th');
+  th.onclick=()=>{document.getElementById('f'+i).click();select(i)};
+  d.querySelector('input[type=file]').onchange=e=>load(i,e.target.files[0]);
+  d.querySelector('input[type=text]').oninput=e=>{s.name=e.target.value;select(i)};
+  d.querySelector('input[type=text]').onfocus=()=>select(i);
+  grid.appendChild(d);s.el=d;
+});
+function select(i){cur=i;slots.forEach((s,k)=>s.el.classList.toggle('on',k===i));if(!playing)draw(ctx,i*DUR+1.2)}
+function load(i,f){
+  if(!f)return;const im=new Image();
+  im.onload=()=>{slots[i].img=im;const th=slots[i].el.querySelector('.th');th.querySelector('img')?.remove();im.className='';const c=im.cloneNode();c.src=im.src;th.appendChild(c);if(!playing)select(i)};
+  im.src=URL.createObjectURL(f);
+}
+document.getElementById('bulk').onchange=e=>{
+  const fs=[...e.target.files].slice(0,N);fs.forEach((f,k)=>load(k,f));
+  document.getElementById('st').textContent=fs.length+' gambar dimuat naik';
+};
+['t1','t2'].forEach(id=>document.getElementById(id).oninput=()=>{if(!playing)draw(ctx,cur*DUR+1.2)});
+
+// ---------- main / preview ----------
+const playBtn=document.getElementById('play');
+function loop(now){
+  if(!playing)return;const t=(now-t0)/1000;
+  if(t>=TOTAL){playing=false;playBtn.textContent='▶ Main';select(0);return}
+  draw(ctx,t);requestAnimationFrame(loop);
+}
+playBtn.onclick=()=>{
+  if(recording)return;
+  if(playing){playing=false;playBtn.textContent='▶ Main';return}
+  playing=true;playBtn.textContent='⏸ Henti';t0=performance.now();requestAnimationFrame(loop);
+};
+
+// ---------- simpan video HD ----------
+document.getElementById('save').onclick=async()=>{
+  if(recording)return;
+  if(!window.MediaRecorder){alert('Pelayar tidak menyokong rakaman video. Guna Chrome atau Safari terkini.');return}
+  playing=false;recording=true;
+  const btn=document.getElementById('save'),pg=document.getElementById('pg'),pb=document.getElementById('pb'),st=document.getElementById('st');
+  btn.disabled=true;playBtn.disabled=true;pg.style.display='block';
+  const types=['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+  const mime=types.find(t=>MediaRecorder.isTypeSupported(t))||'';
+  const stream=cv.captureStream(30);
+  const rec=new MediaRecorder(stream,{mimeType:mime||undefined,videoBitsPerSecond:12000000});
+  const chunks=[];rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  const done=new Promise(r=>rec.onstop=r);
+  rec.start(500);const start=performance.now();
+  await new Promise(res=>{
+    (function f(now){
+      const t=(now-start)/1000;
+      if(t>=TOTAL){res();return}
+      draw(ctx,t);pb.style.width=(t/TOTAL*100)+'%';st.textContent='Merakam… '+Math.round(t)+' / '+TOTAL+' saat (kekalkan tab ini terbuka)';
+      requestAnimationFrame(f);
+    })(start);
+  });
+  draw(ctx,TOTAL-.01);await new Promise(r=>setTimeout(r,300));
+  rec.stop();await done;
+  const ext=(mime||'').includes('mp4')?'mp4':'webm';
+  lastBlob=new Blob(chunks,{type:mime||'video/webm'});lastName='AR-RAZZI-Polaroid-Denim-HD.'+ext;
+  recording=false;btn.disabled=false;playBtn.disabled=false;pg.style.display='none';pb.style.width='0';select(0);
+  document.getElementById('again').style.display='inline-block';
+  await deliver();
+};
+let lastBlob=null,lastName='';
+async function deliver(){
+  const st=document.getElementById('st');if(!lastBlob)return;
+  let dl=null;try{dl=await window.claude.use('downloads')}catch(e){}
+  if(dl){
+    try{await dl.save({filename:lastName,data:lastBlob});st.textContent='Siap! Pilih "Save Video" / Simpan ke Galeri pada menu yang keluar. ('+lastName+')';return}
+    catch(e){st.textContent=(e&&e.code==='declined')?'Simpan dibatalkan. Tekan "Simpan semula" bila bersedia.':'Gagal simpan ('+(e&&e.code||'ralat')+'). Tekan "Simpan semula".';return}
+  }
+  const a=document.createElement('a');a.href=URL.createObjectURL(lastBlob);a.download=lastName;document.body.appendChild(a);a.click();a.remove();
+  st.textContent='Siap! Fail dimuat turun: '+lastName;
+}
+document.getElementById('again').onclick=deliver;
+
+(document.fonts?document.fonts.load("italic 500 58px 'Cormorant Garamond'").then(()=>document.fonts.load("500 62px 'Cormorant Garamond'")):Promise.resolve()).catch(()=>{}).then(()=>select(0));
+select(0);
+</script>
+</body>
+</html>
